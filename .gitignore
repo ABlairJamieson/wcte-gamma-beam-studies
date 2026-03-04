@@ -1,0 +1,17 @@
+# build products
+*.o
+beam_mc_studies
+
+# ROOT output
+*.root
+
+# plots
+*.pdf
+*.png
+
+# core dumps
+core.*
+*.core
+
+# editor
+.vscode
