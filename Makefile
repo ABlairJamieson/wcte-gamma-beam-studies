@@ -24,7 +24,7 @@ SRCS := main.cc \
         src/Studies_QperHit.cc \
         src/Studies_QvsN_2D.cc \
         src/Studies_VtxXZ.cc \
-		src/Studies_Cone42.cc
+		src/Studies_Cone.cc
 
 OBJS := $(SRCS:.cc=.o)
 

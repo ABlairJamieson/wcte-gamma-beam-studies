@@ -6,7 +6,7 @@
 #include "Studies_QperHit.h"
 #include "Studies_QvsN_2D.h"
 #include "Studies_VtxXZ.h"
-#include "Studies_Cone42.h"
+#include "Studies_Cone.h"
 
 #include "WCSimRootEvent.hh"
 
@@ -48,8 +48,11 @@ int RunAnalysis(const char* fname, ConeVertexMode coneMode)
   studies.emplace_back(std::make_unique<QperHitStudy>());
   studies.emplace_back(std::make_unique<QvsN2DStudy>());
   studies.emplace_back(std::make_unique<VtxXZStudy>());
-  studies.emplace_back(std::make_unique<Cone42Study>(geo, beamDir.Unit(), coneMode));
-
+  studies.emplace_back(std::make_unique<ConeStudy>(geo, beamDir.Unit(), coneMode, 42.0));
+  studies.emplace_back(std::make_unique<ConeStudy>(geo, beamDir.Unit(), coneMode, 50.0));
+  studies.emplace_back(std::make_unique<ConeStudy>(geo, beamDir.Unit(), coneMode, 60.0));
+  studies.emplace_back(std::make_unique<ConeStudy>(geo, beamDir.Unit(), coneMode, 70.0));
+  
   // For summed display and per-event samples (optional)
   std::vector<double> pmt_charge_sum(geo.nPMT, 0.0);
   int savedGamma=0, savedPion=0;
