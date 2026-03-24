@@ -1,86 +1,136 @@
 
-# WCTE Gamma Beam Studies
+# MC HAMMER 
 
-Analysis tools for studying **300 MeV gamma beam simulations in WCSim** for the Water Cherenkov Test Experiment (WCTE).
+**Monte Carlo Histogramming, Analysis, and Modular Modeling for Event Research**
 
-This project analyzes simulated events to understand how **pion photoproduction** can be distinguished from pure electromagnetic gamma showers using Cherenkov detector observables.
-
-The code processes WCSim ROOT output and produces diagnostic plots comparing events **with and without pion production**.
+A lightweight, modular framework for analyzing **WCSim ROOT data**.  
+Designed for rapid physics studies with minimal boilerplate — just *hammer the data*.
 
 ---
 
-# Physics Motivation
+## Overview
 
-Gamma interactions in water at ~300 MeV are dominated by electromagnetic processes:
+MC HAMMER provides a simple structure for:
+
+- looping over WCSim events
+- extracting detector and truth information
+- implementing modular analysis “studies”
+- producing ROOT-based histograms and plots
+
+It is intended as a **starting point for students and researchers** working with water Cherenkov detector simulations.
+
+---
+
+## Example Application (Current Study)
+
+This repository currently includes an example analysis of:
+
+ **300 MeV gamma beam simulations in WCSim (WCTE context)**
+
+The goal is to distinguish:
+
+- **pure electromagnetic showers**
+- **gamma -> pion photoproduction events**
+
+using Cherenkov detector observables.
+
+---
+
+## Physics Motivation
+
+Gamma interactions in water at ~300 MeV are dominated by:
 
 - Pair production
 - Compton scattering
 - Electromagnetic shower development
 
-However, **photonuclear interactions** can occasionally produce pions. These events are rare but important to understand because they may mimic other physics signals or affect detector calibration.
+However, **photonuclear interactions** can produce pions.
 
-This analysis explores observables that can separate:
+These events are:
+- rare
+- topologically different
+- important for backgrounds and calibration
 
-- **pure EM gamma showers**
-- **gamma → pion photoproduction events**
+MC HAMMER is used here to explore observables that separate:
 
-using Cherenkov detector information such as:
-
-- total charge
-- number of PMT hits
-- charge-per-hit
-- spatial hit patterns
-- forward Cherenkov cone structure
+- EM-only events
+- events containing pions
 
 ---
 
-# Features
+## Framework Design
 
-The analysis currently includes several studies:
+### Modular Study System
 
-### Basic event observables
-- Total number of PMT hits
-- Total charge
-- Charge per hit
-- Comparison of **pion vs non-pion events**
+Each analysis is implemented as a **study module**:
+
+```cpp
+struct MyStudy : IStudy {
+  void FillEvent(...) override { ... }
+  void WritePlots() override { ... }
+};
+```
+
+Studies are registered in the run loop:
+
+```cpp
+studies.emplace_back(std::make_unique<MyStudy>(...));
+```
+
+This allows:
+- clean separation of analyses
+- easy extension
+- multiple studies running in a single pass over data
+
+### Core Components
+
+- **Event loop** (centralized, efficient)
+- **Geometry cache** (PMT positions, detector info)
+- **Truth utilities** (event classification, vertex extraction)
+- **Plot helpers** (overlays, normalization)
+
+---
+
+## Included Studies
+
+### Basic observables
+- number of PMT hits
+- total charge
+- charge per hit
+- pion vs non-pion comparisons
 
 ### 2D distributions
-- Charge vs number of hits
-- Separate overlays for pion and non-pion events
+- charge vs number of hits
+- overlay comparisons
 
 ### Vertex studies
-- Truth interaction vertex distribution
-- Comparison of shower start vs pion production points
+- truth interaction vertex distributions
 
-### Cherenkov cone analysis
-A study of light inside vs outside the Cherenkov cone (~42° in water).
+### Cone-based topology study
 
-Variables computed:
+Cherenkov cone analysis using a configurable angle.
 
+Variables:
 - \(N_{in}, N_{out}\)
 - \(Q_{in}, Q_{out}\)
 
-Derived observables:
-
+Derived:
 - \(N_{out}/N_{tot}\)
 - \(Q_{out}/Q_{tot}\)
 
-2D distributions are also produced for:
-
+2D phase space:
 - \(Q_{in}\) vs \(N_{in}\)
 - \(Q_{out}\) vs \(N_{out}\)
-- \(Q_{in}\) vs \(N_{out}\)
-- \(Q_{out}\) vs \(N_{in}\)
+- cross-combinations
 
-These help visualize how pion events populate different regions of phase space.
+Used to identify broader angular light distributions in pion events.
 
 ---
 
-# Repository Structure
+## Repository Structure
 
-```
-
-BeamMC_studies/
+```text
+mc-hammer/
 │
 ├── main.cc
 ├── Makefile
@@ -94,86 +144,93 @@ BeamMC_studies/
 ├── src/
 │   ├── Run.cc
 │   ├── Utils.cc
-│   ├── Studies_BasicSpectra.cc
-│   ├── Studies_QperHit.cc
-│   ├── Studies_QvsN_2D.cc
-│   ├── Studies_VtxXZ.cc
-│   └── Studies_Cone42.cc
+│   ├── Studies_*.cc
 │
 └── plots/
-
 ```
-
-The code is organized so that **each physics study is implemented in its own module**, making it easy to add additional analyses.
 
 ---
 
-# Building
+## Building
 
-The code requires:
-
+Requires:
 - ROOT
 - WCSim
 - libWCSimRoot
 
-Inside the analysis container environment:
+Inside your environment:
 
-```
-
+```bash
 make
-
 ```
 
 This produces the executable:
 
-```
-
+```bash
 beam_mc_studies
-
 ```
 
 ---
 
-# Running
+## Running
 
 Example:
 
+```bash
+./beam_mc_studies input.root
 ```
 
-./beam_mc_studies ../WCSim_full/build/src/wcsim_gamma_300_100000.root
+Optional arguments:
 
-```
-
-Optional configuration:
-
-```
-
+```bash
+--cone-angle=42
 --cone-vertex=truth
-
 ```
-
-This controls whether the Cherenkov cone study uses:
-
-- a nominal vertex position, or
-- the **truth interaction vertex**.
 
 ---
 
-# Output
+## Output
 
-The program generates PDF plots including:
+Produces PDF plots including:
 
-- NDigi distributions
-- charge-per-hit distributions
-- Q vs N 2D overlays
-- vertex distributions
-- Cherenkov cone observables
+- 1D distributions
+- normalized overlays
+- 2D phase space plots
+- cone-based observables
 
 These are saved in the working directory.
 
 ---
 
-# Development Notes
+## Adding a New Study
+
+1. Create a new study file, for example `Studies_MyStudy.h/.cc`
+
+```cpp
+struct MyStudy : IStudy {
+  void FillEvent(...) override {
+    // event-level analysis
+  }
+
+  void WritePlots() override {
+    // plotting
+  }
+};
+```
+
+2. Register it in `Run.cc`:
+
+```cpp
+studies.emplace_back(std::make_unique<MyStudy>(...));
+```
+
+3. Add the corresponding `.cc` file to the Makefile.
+
+That is all that is required for the new study to run automatically in the main event loop.
+
+---
+
+## Development Notes
 
 The code is designed to:
 
@@ -185,15 +242,27 @@ This structure makes it straightforward to add additional observables or event c
 
 ---
 
-# Acknowledgements
+## Future Directions
 
-The software structure and many analysis utilities in this repository were developed with **AI-assisted programming support (ChatGPT)** under the direction of the repository author.
+This framework can be extended to:
 
-Design decisions, physics analysis strategy, and validation were performed by the repository author.
+- particle ID studies
+- timing-based analyses (prompt vs delayed light)
+- Michel electron tagging
+- reconstruction validation
+- real detector data
 
 ---
 
-# License
+## Acknowledgements
+
+The software structure and many utilities were developed with **AI-assisted programming support (ChatGPT)** under the direction of the repository author.
+
+Physics design, validation, and interpretation were performed by the author.
+
+---
+
+## License
 
 For research and educational use.
-```
+
