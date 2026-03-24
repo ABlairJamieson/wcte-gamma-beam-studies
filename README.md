@@ -6,6 +6,9 @@
 A lightweight, modular framework for analyzing **WCSim ROOT data**.  
 Designed for rapid physics studies with minimal boilerplate — just *hammer the data*.
 
+<img width="766" height="303" alt="image" src="https://github.com/user-attachments/assets/2cb8d005-7ad1-42ed-a3d7-694a6ff76ceb" />
+
+
 ---
 
 ## Overview
