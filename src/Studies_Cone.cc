@@ -43,6 +43,15 @@ ConeStudy::ConeStudy(const GeoCache& g,
                            (tag+": Qout/Qtot outside cone (no pion);Q_{out}/Q_{tot};Events").c_str(),
                            100,0,1);
 
+  // repeat histograms for fNout_emshower and fQout_emshower studies
+  h_fNout_emshower_pion   = new TH1D((tag+"_hfNout_emshower_pion").c_str(),
+                                   (tag+": Nout/Ntot outside cone (emshower);N_{out}/N_{tot};Events").c_str(),
+                                   100,0,1);
+
+  h_fQout_emshower_pion   = new TH1D((tag+"_hfQout_emshower_pion").c_str(),
+                                   (tag+": Qout/Qtot outside cone (emshower);Q_{out}/Q_{tot};Events").c_str(),
+                                   100,0,1);
+
   auto mk2 = [&](const char* suffix, const char* title){
     return new TH2D((tag+"_"+suffix).c_str(), title, 70,0,1400, 50,0,5000);
   };
@@ -102,6 +111,10 @@ void ConeStudy::FillEvent(WCSimRootTrigger* ev,
     bool inCone = (u.Dot(beam_hat) >= cosCone);
 
     double q = dh->GetQ();
+    // accumulate only prompt hits (e.g. within XX ns of vertex time) to avoid bias from late hits from neutrons, etc.
+    // this is a somewhat loose cut, but should be sufficient for a first pass; can always tighten later if needed
+    double t = dh->GetT() - geo.pmt_tof[tube]; // time minus TOF from vertex to PMT
+    if (t > 100.0) continue;
     if (inCone) { Nin++;  Qin += q; }
     else        { Nout++; Qout += q; }
   }
@@ -112,6 +125,7 @@ void ConeStudy::FillEvent(WCSimRootTrigger* ev,
 
   double fN = (double)Nout / Ntot;
   double fQ = Qout / Qtot;
+
   if (e.truth.hasPions) {
     h_fNout_pion->Fill(fN);
     h_fQout_pion->Fill(fQ);
@@ -128,6 +142,11 @@ void ConeStudy::FillEvent(WCSimRootTrigger* ev,
     h2_Qout_Nout_nopion->Fill(Nout, Qout);
     h2_Qin_Nout_nopion->Fill(Nout, Qin);
     h2_Qout_Nin_nopion->Fill(Nin, Qout);
+
+    if (!e.truth.hasHadronic) {
+      h_fNout_emshower_pion->Fill(fN);
+      h_fQout_emshower_pion->Fill(fQ);
+    }
   }
 }
 
@@ -142,6 +161,19 @@ void ConeStudy::WritePlots()
     pion->SetLineColor(kRed);    pion->SetLineWidth(2);
     nopion->Draw("hist");
     pion->Draw("hist same");
+    if (auto leg = c.BuildLegend(0.60,0.75,0.88,0.88)) leg->SetBorderSize(0);
+    c.SaveAs(out.c_str());
+  };
+
+  auto overlay1Dem = [&](TH1* pion, TH1* nopion, TH1* emshower, const std::string& out, const char* title){
+    TCanvas c("c","c",800,600);
+    nopion->SetTitle(title);
+    nopion->SetLineColor(kBlue); nopion->SetLineWidth(2);
+    pion->SetLineColor(kRed);    pion->SetLineWidth(2);
+    emshower->SetLineColor(kGreen+2); emshower->SetLineWidth(2);
+    nopion->Draw("hist");
+    pion->Draw("hist same");
+    emshower->Draw("hist same");
     if (auto leg = c.BuildLegend(0.60,0.75,0.88,0.88)) leg->SetBorderSize(0);
     c.SaveAs(out.c_str());
   };
@@ -188,6 +220,12 @@ void ConeStudy::WritePlots()
             tag+"_fQout_overlay.pdf",
             (tag+": Outside-cone charge fraction;Q_{out}/Q_{tot};Events").c_str());
 
+  overlay1Dem(h_fNout_pion, h_fNout_nopion, h_fNout_emshower_pion,
+              tag+"_fNout_overlay_emshower.pdf",
+              (tag+": Outside-cone hit fraction;N_{out}/N_{tot};Events").c_str());
+  overlay1Dem(h_fQout_pion, h_fQout_nopion, h_fQout_emshower_pion,
+              tag+"_fQout_overlay_emshower.pdf",
+              (tag+": Outside-cone charge fraction;Q_{out}/Q_{tot};Events").c_str());
 
   TH1D* fNout_no_norm = mkNorm1D(h_fNout_nopion, "h_fNout_nopion_norm");
   TH1D* fNout_pi_norm = mkNorm1D(h_fNout_pion,   "h_fNout_pion_norm");

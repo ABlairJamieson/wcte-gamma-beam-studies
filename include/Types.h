@@ -26,8 +26,10 @@ struct EventTruth {
 };
 
 struct EventReco {
-  int    nDigiHits = 0;
-  double totQ = 0.0;
+  int    nDigiHits = 0; // total number of digi hits in the event
+  double totQ = 0.0;    // total charge in p.e. summed over all digi hits
+  double t = 0.0;       // time of first digi hit (relative to trigger time, in ns)
+  double tavg = 0.0;     // average time of digi hits (relative to trigger time, in ns)
 };
 
 struct EventSummary {

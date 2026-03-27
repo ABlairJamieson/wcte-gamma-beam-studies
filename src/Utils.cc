@@ -102,10 +102,11 @@ EventTruth ClassifyTruth(WCSimRootTrigger* ev) {
     auto* trk = (WCSimRootTrack*) ev->GetTracks()->At(i);
     if (!trk) continue;
     int pdg = trk->GetIpnu();
+    int parent = trk->GetParentId();
 
     if (std::abs(pdg)==2212 || std::abs(pdg)==2112 || std::abs(pdg)==211 || pdg==111) t.hasHadronic = true;
-    if (pdg==111) { t.hasPions=true; t.hasPi0=true; }
-    if (pdg==211 || pdg==-211) { t.hasPions=true; t.hasPiCh=true; }
+    if (pdg==111 && parent==1) { t.hasPions=true; t.hasPi0=true; }
+    if ((pdg==211 || pdg==-211) && parent==1) { t.hasPions=true; t.hasPiCh=true; }
   }
   return t;
 }
@@ -118,6 +119,8 @@ EventReco ComputeReco(WCSimRootTrigger* ev, const GeoCache& geo,
 {
   EventReco r;
   const int nDigi = ev->GetNcherenkovdigihits();
+  double tfirst = 1e9;
+  double tavg = 0.0;
   for (int i=0; i<nDigi; i++) {
     auto* dh = (WCSimRootCherenkovDigiHit*) ev->GetCherenkovDigiHits()->At(i);
     if (!dh) continue;
@@ -132,7 +135,13 @@ EventReco ComputeReco(WCSimRootTrigger* ev, const GeoCache& geo,
     r.totQ += q;
     if (pmt_charge_accum) (*pmt_charge_accum)[tube] += q;
     if (hDigiTimeMinusTOF) hDigiTimeMinusTOF->Fill(t - geo.pmt_tof[tube], q);
+    if (t < tfirst) tfirst = t;
+    tavg += t;
   }
+  r.t = (r.nDigiHits > 0) ? tfirst : 0.0;
+  // need to be careful not to divide by zero here; tavg is only meaningful if nDigiHits > 0
+  r.tavg = (r.nDigiHits > 0) ? (tavg / r.nDigiHits) : 0.0;  
+  
   return r;
 }
 

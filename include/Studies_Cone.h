@@ -22,6 +22,8 @@ struct ConeStudy : IStudy {
   // histograms (fractions)
   TH1D *h_fNout_pion, *h_fNout_nopion;
   TH1D *h_fQout_pion, *h_fQout_nopion;
+  TH1D *h_fNout_emshower_pion; // subset of pion events without hadronic activity
+  TH1D *h_fQout_emshower_pion; // subset of pion events without hadronic activity
 
   // same-side
   TH2D *h2_Qin_Nin_pion,   *h2_Qin_Nin_nopion;
